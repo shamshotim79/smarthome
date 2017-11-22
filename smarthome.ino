@@ -1,13 +1,11 @@
 #include <ESP8266WiFi.h>
-const char* ssid = "Besoo";
-//const char* password = "Beso6694967";
-const char* password = "beso1212";
+const char* ssid = "Your WiFi Network Name";
+const char* password = "Your WiFi Passward";
 int currentstate[]={0,0,0,0,0};
 int myPins[]={5,4,0,2,14,12,13,15};
-int ledstrip1;
 char ledstrip[]="123456789";
 char data[]="123456789FFFFF";
-int R,G,B=0;
+int R,G,B,RGB=0;
 WiFiServer server(80);
 void setup() {
 for(int i=0;i<8;i++){
@@ -31,38 +29,37 @@ for(int i=0;i<8;i++){
 }
 void loop() {
 WiFiClient client = server.available();
- 
-  
-
   if(client){
+//Getting data from the app and converting it to char arry 
 String text=client.readStringUntil('\n');
-Serial.println(text);
 text.remove(0,5);
-text.remove(14,text.length());
-
+text.remove(15,text.length());
 if(text!="favic"){
-strncpy( data, text.c_str(),14);
-strncpy ( ledstrip, data, 9 );
-
+strncpy( data, text.c_str(),15);
+/*data will be like 123456789FFFFF
+123 are RED value, 456 Green value ,789 Blue value and
+each F is a turned off device when the device is on F will be N */
 Serial.println(data);
-ledstrip1=atoi(ledstrip);
-R=ledstrip1/1000000;
-G=(ledstrip1/1000)%1000;
-B=ledstrip1%1000;
+
+/*Getting Red , Green and Blue color values for led and converting it to be in the range from 0:1023 
+1023 is the max pwm value 
+and change the state of the led strip pins with the pwm values.
+*/
+strncpy ( ledstrip, data, 9 );
+RGB=atoi(ledstrip);
+R=RGB/1000000;
+G=(RGB/1000)%1000;
+B=RGB%1000;
+
 R=map(R,0,255,0,1023);
 G=map(G,0,255,0,1023);
 B=map(B,0,255,0,1023);
+
 analogWrite(myPins[5],R);
 analogWrite(myPins[6],G);
 analogWrite(myPins[7],B);
-Serial.print("R : ");
-Serial.print(R);
-Serial.print(" G : ");
-Serial.print(G);
-Serial.print(" B : ");
-Serial.println(B);
 
-
+//Change state of the pins
 for (int i=0;i<5;i++) {
         if (data[i+9]=='F'){
 digitalWrite(myPins[i],0);
@@ -74,7 +71,7 @@ digitalWrite(myPins[i],0);
    
        }
 
-
+/*------------Sending Data to the APP--------------*/
 if(data[0]=='D'){
   
    client.print("<title>");
@@ -88,6 +85,7 @@ client.print("F");
 client.println("</title>");
 }
 }
+
 client.flush();  
 }
 }
